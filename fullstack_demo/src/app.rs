@@ -1,4 +1,3 @@
-use crate::error_template::{AppError, ErrorTemplate};
 use leptos::{ev::SubmitEvent, *};
 use leptos_meta::*;
 use leptos_router::*;
@@ -25,17 +24,11 @@ pub fn App() -> impl IntoView {
         <Title text="Welcome to Leptos"/>
 
         // content for this welcome page
-        <Router fallback=|| {
-            let mut outside_errors = Errors::default();
-            outside_errors.insert_with_default_key(AppError::NotFound);
-            view! {
-                <ErrorTemplate outside_errors/>
-            }
-            .into_view()
-        }>
+        <Router>
             <main>
                 <Routes>
                     <Route path="" view=HomePage/>
+                    <Route path="/*any" view=NotFound/>
                 </Routes>
             </main>
         </Router>
@@ -126,4 +119,26 @@ pub async fn add_name(person: Person) -> Result<(), ServerFnError> {
     //     Ok(_row) => Ok(()),
     //     Err(e) => Err(ServerFnError::ServerError(e.to_string())),
     // }
+}
+
+/// 404 - Not Found
+#[component]
+fn NotFound() -> impl IntoView {
+    // set an HTTP status code 404
+    // this is feature gated because it can only be done during
+    // initial server-side rendering
+    // if you navigate to the 404 page subsequently, the status
+    // code will not be set because there is not a new HTTP request
+    // to the server
+    #[cfg(feature = "ssr")]
+    {
+        // this can be done inline because it's synchronous
+        // if it were async, we'd use a server function
+        let resp = expect_context::<leptos_actix::ResponseOptions>();
+        resp.set_status(actix_web::http::StatusCode::NOT_FOUND);
+    }
+
+    view! {
+        <h1>"Not Found"</h1>
+    }
 }
